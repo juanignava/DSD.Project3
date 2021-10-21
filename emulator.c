@@ -15,6 +15,9 @@
 //initilise SDL
 int init(int w, int h, int argc, char *args[]);
 
+int sleep = 0;
+Uint32 next_game_tick;
+
 int width, height;		//used if fullscreen
 
 SDL_Window* window = NULL;	//The window we'll be rendering to
@@ -235,6 +238,15 @@ void execute_ins(){
             printf("PC = %d, Instruction: syscall\n", PC);
 
             if (BR[2] == 32) SDL_Delay(BR[4]);
+
+
+            next_game_tick += 1000 / 60;
+            sleep = next_game_tick - SDL_GetTicks();
+        
+            if( sleep >= 0 ) {
+                                
+                SDL_Delay(sleep);
+            }
             PC = PC+1;
         }
 
@@ -453,27 +465,28 @@ void execute_ins(){
                 const Uint8 *keystate = SDL_GetKeyboardState(NULL);
 
                 if (keystate[SDL_SCANCODE_1]) {
-                    BR[rsNum] = 49; // significa que se presiono un 1
+                    printf("\n\nPRESIONANDO EL 1\n\n");
+                    BR[rtNum] = 49; // significa que se presiono un 1
                 }
                 
                 if (keystate[SDL_SCANCODE_2]) {
-                    BR[rsNum] = 50; // significa que se presiono un 2
+                    BR[rtNum] = 50; // significa que se presiono un 2
                 }
 
                 if (keystate[SDL_SCANCODE_A]) {
-                    BR[rsNum] = 97; // significa que se presiono una A
+                    BR[rtNum] = 97; // significa que se presiono una A
                 }
 
                 if (keystate[SDL_SCANCODE_Z]) {
-                    BR[rsNum] = 122; // significa que se presiono una Z
+                    BR[rtNum] = 122; // significa que se presiono una Z
                 }
 
                 if (keystate[SDL_SCANCODE_K]) {
-                    BR[rsNum] = 107; // significa que se presiono una K
+                    BR[rtNum] = 107; // significa que se presiono una K
                 }
 
                 if (keystate[SDL_SCANCODE_M]) {
-                    BR[rsNum] = 109; // significa que se presiono una M
+                    BR[rtNum] = 109; // significa que se presiono una M
                 }
 
                 if (keystate[SDL_SCANCODE_ESCAPE]) {
@@ -739,6 +752,7 @@ int main(int argc, char *args[])
 
     if (!(data & text)) return 0;
     
+    next_game_tick = SDL_GetTicks();
     //endGame=1;
     while (!endGame)
     {
@@ -750,6 +764,8 @@ int main(int argc, char *args[])
 		SDL_RenderPresent(renderer);
         //SDL_Delay(1);
         */
+       //time it takes to render  frame in milliseconds
+		
     }
 
     
