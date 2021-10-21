@@ -1,14 +1,35 @@
 //Using libs SDL, glibc
-#include <SDL.h>	//SDL version 2.0
+#include <SDL.h>//SDL version 2.0
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
 
 #define SCREEN_WIDTH 640    // window height
-#define SCREEN_HEIGHT 480   // windoe width
+#define SCREEN_HEIGHT 320   // windoe width
 #define AMOUNT_OF_DATA 14 
 #define AMOUNT_OF_INSTRUTIONS 716
+#define SPACES_IN_STACK 100
+
+//function prototypes
+//initilise SDL
+int init(int w, int h, int argc, char *args[]);
+
+int width, height;		//used if fullscreen
+
+SDL_Window* window = NULL;	//The window we'll be rendering to
+SDL_Renderer *renderer;		//The renderer SDL will use to draw to the screen
+
+
+//surfaces
+static SDL_Surface *screen;
+static SDL_Surface *title;
+static SDL_Surface *numbermap;
+static SDL_Surface *end;
+
+//textures
+SDL_Texture *screen_texture;
+
 
 // Global variables
 void instructions(void);
@@ -29,6 +50,10 @@ int BR[32] = {0, 0, 0, 0,   // registers values
 int mem_data[AMOUNT_OF_DATA];   // data saved in the program
 
 char instruction_mem[AMOUNT_OF_INSTRUTIONS][34];
+
+int stack[SPACES_IN_STACK];
+
+int stackPointer = 0;
 
 
 
@@ -81,7 +106,7 @@ int add_instructions() {
     ssize_t read;
 
     // open the text
-    fp = fopen("text1.txt", "r");
+    fp = fopen("text.txt", "r");
     if (fp == NULL) {
         printf("Error en la lectura del text.txt");
         return 0;
@@ -118,11 +143,165 @@ void execute_ins(){
     
     /*
     All type R instructions have opcode = 0
-    List of instructions
+    List of instructions based in the funct (in decimal)
+
+    syscall -> 12
+    addu    -> 33
+    slt     -> 42
+    sub     -> 34
+    sll     -> 0
+    jr      -> 8
+    add     -> 32
+    xor     -> 38
     */
     if (opcodeNum == 0)
     {
-        printf("instruction type R\n");
+
+        // Get the rs value
+        char rs[5];
+        int lenght_rs = 5;
+        int initPosition = 6;
+        int c_rs = 0;
+
+        while (c_rs < lenght_rs) 
+        {
+            rs[c_rs] = instruction_mem[PC][initPosition+c_rs];
+            c_rs++;
+        }
+        rs[c_rs] = '\0';
+        int rsNum = strtol(rs, NULL, 2);
+
+        // Get the rt value
+        char rt[5];
+        int lenght_rt = 5;
+        initPosition = 11;
+        int c_rt = 0;
+
+        while (c_rt < lenght_rt) 
+        {
+            rt[c_rt] = instruction_mem[PC][initPosition+c_rt];
+            c_rt++;
+        }
+        rt[c_rt] = '\0';
+        int rtNum = strtol(rt, NULL, 2);
+
+        // Get the rd value
+        char rd[5];
+        int lenght_rd = 5;
+        initPosition = 16;
+        int c_rd = 0;
+
+        while (c_rd < lenght_rt) 
+        {
+            rd[c_rd] = instruction_mem[PC][initPosition+c_rd];
+            c_rd++;
+        }
+        rt[c_rd] = '\0';
+        int rdNum = strtol(rd, NULL, 2);
+
+        // Get the shamt value
+        char shamt[5];
+        int lenght_sh = 5;
+        initPosition = 21;
+        int c_sh = 0;
+
+        while (c_sh < lenght_sh) 
+        {
+            shamt[c_sh] = instruction_mem[PC][initPosition+c_sh];
+            c_sh++;
+        }
+        rt[c_sh] = '\0';
+        int shamtNum = strtol(shamt, NULL, 2);
+
+        // Get the funct value
+        char funct[6];
+        int lenght_fn = 6;
+        initPosition = 26;
+        int c_fn = 0;
+
+        while (c_fn < lenght_fn) 
+        {
+            funct[c_rt] = instruction_mem[PC][initPosition+c_fn];
+            c_fn++;
+        }
+        funct[c_fn] = '\0';
+        int functNum = strtol(funct, NULL, 2);
+
+        // Syscall (used to pause the execusion)
+        if (functNum == 12)
+        {
+            printf("PC = %d, Instruction: syscall\n", PC);
+
+            if (BR[2] == 32) SDL_Delay(BR[4]);
+            PC = PC+1;
+        }
+
+        // addu (add unsigned)
+        if (functNum == 33)
+        {
+            printf("PC = %d, Instruction: addu\n", PC);
+            BR[rdNum] = BR[rsNum] + BR[rtNum];
+            PC = PC+1;
+        }
+        
+        // slt (set less than)
+        if (functNum == 42)
+        {
+            printf("PC = %d, Instruction: slt\n", PC);
+
+            if (BR[rsNum] < BR[rtNum]) BR[rdNum] = 1;
+
+            else BR[rdNum] = 0;
+            PC = PC+1;
+            
+        }
+        
+        // sub (substract)
+        if (functNum == 34) {
+            printf("PC = %d, Instruction: sub\n", PC);
+            BR[rdNum] = BR[rsNum] - BR[rtNum];
+            PC = PC+1;    
+        }
+        
+        // sll (shift left logical)
+        if (functNum == 0) {
+            
+            printf("PC = %d, Instruction: sll\n", PC);
+            BR[rdNum] = BR[rsNum] * pow(2, shamtNum);
+            PC = PC+1;
+        }
+        
+        // jr (jump register)
+        if (functNum == 8)
+        {
+            printf("PC = %d, Instruction: jr\n", PC);
+            PC = BR[rsNum];
+        }
+        
+        // add (add)
+        if (functNum == 32) {
+            printf("PC = %d, Instruction: add\n", PC);
+            BR[rdNum] = BR[rsNum] + BR[rtNum];
+
+            PC = PC + 1;
+        }
+        
+        // xor (xor)
+        if (functNum == 38) {
+            printf("PC = %d, Instruction: xor\n", PC);
+            if (rs[0] == 0) rs[0] = 1; else rs[0] = 0;
+            if (rs[1] == 0) rs[1] = 1; else rs[1] = 0;
+            if (rs[2] == 0) rs[2] = 1; else rs[2] = 0;
+            if (rs[3] == 0) rs[3] = 1; else rs[3] = 0;
+            if (rs[4] == 0) rs[4] = 1; else rs[4] = 0;
+            rs[5] = '\0';
+
+            BR[rdNum] = strtol(rd, NULL, 2);
+
+            PC = PC + 1;
+
+        }
+
     }
     
     /*
@@ -130,10 +309,17 @@ void execute_ins(){
     List of instructions: (opcodes in decimal)
     
     addiu   -> opcode 9
-    lui     -> opcode 15 
+    lui     -> opcode 15
+    lw      -> opcode 35 
+    sw      -> opcode 43
+    beq     -> opcode 4
+    addi    -> opcode 8
+    bne     -> opcode 5
+    ori     -> opcode 13
+    blez    -> opcode 6
+    slti    -> opcode 10
     */
-    else if (opcodeNum == 35 | opcodeNum == 9 | opcodeNum == 15){
-        printf("Instruction type I\n");
+    else if (opcodeNum == 35 | opcodeNum == 9 | opcodeNum == 15 | opcodeNum == 35 | opcodeNum == 43 | opcodeNum == 4 | opcodeNum == 8 | opcodeNum == 5 | opcodeNum == 13 | opcodeNum == 6 | opcodeNum == 10){
 
         // Get the rs value
         char rs[5];
@@ -176,7 +362,24 @@ void execute_ins(){
             c_inm++;
         }
         inmediate[c_inm] = '\0';
-        int inmNum = strtol(inmediate, NULL, 2);
+
+        int inmNum;
+        if (inmediate[0] == '0')
+        {
+            inmNum = strtol(inmediate, NULL, 2);
+        }
+        else {
+            c_inm = 0;
+
+            while (c_inm < lenght_inm)
+            {
+                if (inmediate[c_inm] == 0) inmediate[c_inm] = 1;
+                else inmediate[c_inm] = 1;
+                c_inm++;
+            }
+            
+            inmNum = -1*(strtol(inmediate, NULL, 2) + 1);
+        }
 
         // Execute the respective instruction
 
@@ -184,11 +387,10 @@ void execute_ins(){
         if (opcodeNum == 9) {
             printf("PC = %d, Instruction: addiu\n", PC);
             BR[rtNum] = BR[rsNum] + inmNum;
+            PC = PC+1;
         }
         
         // lui (load upper inmediate)
-        printf("The inmediate is: %s\n", inmediate);
-        printf("The inmediate number values is: %d\n", inmNum);
         if (opcodeNum == 15) {
             printf("PC = %d, Instruction: lui\n", PC);
             int inmNumExt = 0;
@@ -198,21 +400,171 @@ void execute_ins(){
                 inmNumExt += lastDig * pow(2, k);
                 k++;
                 inmNum = inmNum/2;
-                printf("El valor del acomulado es: %d\n", inmNumExt);
             }
             BR[rtNum] = inmNumExt;
-            printf("El valor del registro rt es: %d\n", BR[rtNum]);
+            PC = PC+1;
+        }
+
+        // lw (load word)
+        if (opcodeNum == 35) {
+            printf("PC = %d, Instruction: lw\n", PC);
+
+            // Para load word se presentan varios casos
+
+            // Caso en el que se toma un valor en el stack
+            if (rsNum == 29)
+            {
+                BR[rtNum] = stack[inmNum/4 + stackPointer];
+            }
+
+            // Caso en el que se toma un dato guardado en .data
+            if (BR[rsNum] == 268500992) { // 268500992 es la dirección inicial de .data
+                
+                // se debe buscar en el arreglo mem_data
+                BR[rtNum] = mem_data[inmNum/4];
+            }
+
+            // Caso en el que se debe esperar una entrada
+            if (BR[rsNum] == -65536 & inmNum == 4)
+            {
+                // se debe esperar a una entrada del teclado
+		        SDL_PumpEvents();
+
+                const Uint8 *keystate = SDL_GetKeyboardState(NULL);
+
+                if (keystate[SDL_SCANCODE_1]) {
+                    BR[rsNum] = 49; // significa que se presiono un 1
+                }
+                
+                if (keystate[SDL_SCANCODE_2]) {
+                    BR[rsNum] = 50; // significa que se presiono un 2
+                }
+
+                if (keystate[SDL_SCANCODE_A]) {
+                    BR[rsNum] = 97; // significa que se presiono una A
+                }
+
+                if (keystate[SDL_SCANCODE_Z]) {
+                    BR[rsNum] = 122; // significa que se presiono una Z
+                }
+
+                if (keystate[SDL_SCANCODE_K]) {
+                    BR[rsNum] = 107; // significa que se presiono una K
+                }
+
+                if (keystate[SDL_SCANCODE_M]) {
+                    BR[rsNum] = 109; // significa que se presiono una M
+                }
+
+                if (keystate[SDL_SCANCODE_ESCAPE]) {
+                    endGame =1; // significa que se presiono ESC entonces se debe salir del programa
+                }
+                
+            }
+            
+            PC = PC+1;
+            
+        }
+
+        // sw (store word)
+        if (opcodeNum == 43) {
+            printf("PC = %d, Instruction: sw\n", PC);
+
+
+            // Caso en el que se guarda un valor en el stack
+            if (rsNum == 29)
+            {
+                stack[inmNum/4 + stackPointer] = BR[rtNum];
+            }
+            
+
+            // Caso en el que se guarda un dato en .data
+            if (BR[rsNum] == 268500992) { // 268500992 es la dirección inicial de .data
+                
+                // se debe buscar en el arreglo mem_data
+                mem_data[inmNum/4] = BR[rtNum];
+            }
+
+            // Este es el caso en el que se pinta uno de los cuadros de la pantalla
+            if (rsNum == 2 | rsNum == 10)
+            {
+                /*
+                La pantalla se divide en rectangulos, en general son 64 x 32 cuadros
+                hay que pintar con el color guardado en el registro rt el cuadro con el
+                numero guardado en rs - $gp ( rs - BN[28] )
+                */
+
+                int boardPointNum = BR[rsNum] - BR[28];
+                int boardPointx = boardPointNum % 64;
+                int boardPointy = boardPointNum / 64;
+                int pointWidth = SCREEN_WIDTH / 64;
+                int pointHeight = SCREEN_HEIGHT / 32;
+
+                SDL_Rect src;
+                src.x = boardPointx;
+                src.y = boardPointy;
+                src.w = pointWidth;
+                src.h = pointHeight;
+
+                int r = SDL_FillRect(screen, &src, BR[rtNum]);
+            }
+
+            PC = PC+1;
+            
         }
         
+        // beq (branch on equal)
+        if (opcodeNum == 4) {
+            printf("PC = %d, Instruction: beq\n", PC);
+            if (BR[rsNum] == BR[rtNum]) PC = PC + 1 + inmNum;
 
-        printf("The rs is: %s\n", rs);
-        printf("The rs number values is: %d\n", rsNum);
+            else PC = PC + 1;
+        }
 
-        printf("The rt is: %s\n", rt);
-        printf("The rt number values is: %d\n", rtNum);
+        // addi (add immediate)
+        if (opcodeNum == 8) {
+            printf("PC = %d, Instruction: addi\n", PC);
 
-        printf("The inmediate is: %s\n", inmediate);
-        printf("The inmediate number values is: %d\n", inmNum);
+            BR[rtNum] = BR[rsNum] + inmNum;
+
+            PC = PC + 1;
+        }
+        
+        // bne (branch not equal)
+        if (opcodeNum == 5) {
+            printf("PC = %d, Instruction: bne\n", PC);
+            if (BR[rsNum] != BR[rtNum]) PC = PC + 1 + inmNum;
+
+            else PC = PC + 1;
+        }
+        
+        // ori (or immediate)
+        if (opcodeNum == 13) {
+            printf("PC = %d, Instruction: ori\n", PC);
+            // solo se va a sumar pero es porque para eso se suele usar
+            BR[rtNum] = BR[rsNum] + inmNum;
+            PC = PC + 1;
+        }
+
+        // blez (branch on less or equal zero)
+        if (opcodeNum == 6) {
+            printf("PC = %d, Instruction: ori\n", PC);
+            if (BR[rsNum] <= 0) PC = PC + 1 + inmNum;
+
+            else PC = PC + 1;
+
+        }
+        
+        // slti (set less than immediate
+        if (opcodeNum == 10) {
+            printf("PC = %d, Instruction: slti\n", PC);
+
+            if (BR[rsNum] < inmNum) BR[rtNum] = 1;
+            else BR[rtNum] = 0;
+
+            PC = PC + 1;
+        }
+        
 
     }
 
@@ -223,7 +575,6 @@ void execute_ins(){
     */
     else if (opcodeNum == 3 | opcodeNum == 2)
     {
-        printf("Instruction type J\n");
         
         // Get and complete the address
 
@@ -271,24 +622,95 @@ void execute_ins(){
 
     }
 
-    endGame = 1;
+    endGame = 0;
 }
 
-int main(void)
+int main(int argc, char *args[])
 {
     
+    //SDL Window setup
+	if (init(SCREEN_WIDTH, SCREEN_HEIGHT, argc, args) == 1) {
+		
+		return 0;
+	}
+	
+	SDL_GetWindowSize(window, &width, &height);
+    
+
     int data = add_data(AMOUNT_OF_DATA);
     int text = add_instructions();
 
-
-    //printf("The original string is: %s\n", instruction_mem[PC]);
     if (!(data & text)) return 0;
     
     while (!endGame)
     {
         execute_ins();
+        SDL_UpdateTexture(screen_texture, NULL, screen->pixels, screen->w * sizeof (Uint32));
+		SDL_RenderCopy(renderer, screen_texture, NULL, NULL);
+        //draw to the display
+		SDL_RenderPresent(renderer);
     }
 
+    
+    //free renderer and all textures used with it
+	SDL_DestroyRenderer(renderer);
+	
+	//Destroy window 
+	SDL_DestroyWindow(window);
+
+	//Quit SDL subsystems 
+	SDL_Quit(); 
+    
 
     return 0;
+}
+
+int init(int width, int height, int argc, char *args[]) {
+    
+    //Initialize SDL
+	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+
+		printf("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
+		
+		return 1;
+	} 
+
+    int i;
+	
+	for (i = 0; i < argc; i++) {
+		
+		//Create window	
+		if(strcmp(args[i], "-f")) {
+			
+			SDL_CreateWindowAndRenderer(SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN, &window, &renderer);
+		
+		} else {
+		
+			SDL_CreateWindowAndRenderer(SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_FULLSCREEN_DESKTOP, &window, &renderer);
+		}
+	}
+
+    //create the screen sruface where all the elemnts will be drawn onto (ball, paddles, net etc)
+	screen = SDL_CreateRGBSurfaceWithFormat(0, width, height, 32, SDL_PIXELFORMAT_RGBA32);
+	
+	if (screen == NULL) {
+		
+		printf("Could not create the screen surfce! SDL_Error: %s\n", SDL_GetError());
+
+		return 1;
+	}
+
+	//create the screen texture to render the screen surface to the actual display
+	screen_texture = SDL_CreateTextureFromSurface(renderer, screen);
+
+	if (screen_texture == NULL) {
+		
+		printf("Could not create the screen_texture! SDL_Error: %s\n", SDL_GetError());
+
+		return 1;
+	}
+
+    	
+	return 0;
+
 }
