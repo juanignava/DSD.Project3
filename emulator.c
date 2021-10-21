@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "instructions.h"
+#include <math.h>
 
 #define SCREEN_WIDTH 640    // window height
 #define SCREEN_HEIGHT 480   // windoe width
@@ -81,7 +81,7 @@ int add_instructions() {
     ssize_t read;
 
     // open the text
-    fp = fopen("text.txt", "r");
+    fp = fopen("text1.txt", "r");
     if (fp == NULL) {
         printf("Error en la lectura del text.txt");
         return 0;
@@ -125,7 +125,102 @@ void execute_ins(){
         printf("instruction type R\n");
     }
     
-    // Filter the type of the instruction
+    /*
+    All type I instructions
+    List of instructions: (opcodes in decimal)
+    
+    addiu   -> opcode 9
+    lui     -> opcode 15 
+    */
+    else if (opcodeNum == 35 | opcodeNum == 9 | opcodeNum == 15){
+        printf("Instruction type I\n");
+
+        // Get the rs value
+        char rs[5];
+        int lenght_rs = 5;
+        int initPosition = 6;
+        int c_rs = 0;
+
+        while (c_rs < lenght_rs) 
+        {
+            rs[c_rs] = instruction_mem[PC][initPosition+c_rs];
+            c_rs++;
+        }
+        rs[c_rs] = '\0';
+        int rsNum = strtol(rs, NULL, 2);
+
+        // Get the rt value
+        char rt[5];
+        int lenght_rt = 5;
+        initPosition = 11;
+        int c_rt = 0;
+
+        while (c_rt < lenght_rt) 
+        {
+            rt[c_rt] = instruction_mem[PC][initPosition+c_rt];
+            c_rt++;
+        }
+        rt[c_rt] = '\0';
+        int rtNum = strtol(rt, NULL, 2);
+        
+
+        // Get the inmediate value
+        char inmediate[16];
+        int lenght_inm = 16;
+        initPosition = 16;
+        int c_inm = 0;
+
+        while (c_inm < lenght_inm) 
+        {
+            inmediate[c_inm] = instruction_mem[PC][initPosition+c_inm];
+            c_inm++;
+        }
+        inmediate[c_inm] = '\0';
+        int inmNum = strtol(inmediate, NULL, 2);
+
+        // Execute the respective instruction
+
+        // addiu (add inmediate unsigned)
+        if (opcodeNum == 9) {
+            printf("PC = %d, Instruction: addiu\n", PC);
+            BR[rtNum] = BR[rsNum] + inmNum;
+        }
+        
+        // lui (load upper inmediate)
+        printf("The inmediate is: %s\n", inmediate);
+        printf("The inmediate number values is: %d\n", inmNum);
+        if (opcodeNum == 15) {
+            printf("PC = %d, Instruction: lui\n", PC);
+            int inmNumExt = 0;
+            int k = 16;
+            while (inmNum!=0) {
+                int lastDig = inmNum%2;
+                inmNumExt += lastDig * pow(2, k);
+                k++;
+                inmNum = inmNum/2;
+                printf("El valor del acomulado es: %d\n", inmNumExt);
+            }
+            BR[rtNum] = inmNumExt;
+            printf("El valor del registro rt es: %d\n", BR[rtNum]);
+        }
+        
+
+        printf("The rs is: %s\n", rs);
+        printf("The rs number values is: %d\n", rsNum);
+
+        printf("The rt is: %s\n", rt);
+        printf("The rt number values is: %d\n", rtNum);
+
+        printf("The inmediate is: %s\n", inmediate);
+        printf("The inmediate number values is: %d\n", inmNum);
+
+    }
+
+    /*
+    All type J instructions
+    List of instructions:
+    jal and j
+    */
     else if (opcodeNum == 3 | opcodeNum == 2)
     {
         printf("Instruction type J\n");
