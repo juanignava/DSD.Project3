@@ -81,9 +81,31 @@ int add_data(int amount_words) {
     }
 
     int i = 0;
+    int c;
+    int lineLenght = 32;
+
     // Save the binaries as integers in the mem_data array
     while (((read = getline(&line, &len, fp)) != -1) & i<amount_words) {
-        mem_data[i] = strtol(line, NULL, 2);
+
+        if (line[0] == '0')
+        {
+            mem_data[i] = strtol(line, NULL, 2);
+        }
+        else {
+            c = 0;
+
+            while (c < lineLenght)
+            {
+                if (line[c] == '0') line[c] = '1';
+                else line[c] = '0';
+                c++;
+            }
+            line[c] = '\0';
+            
+            mem_data[i]  = -1*(strtol(line, NULL, 2) + 1);
+        }
+
+        //mem_data[i] = strtol(line, NULL, 2);
         i ++;
     }
 
@@ -239,7 +261,7 @@ void execute_ins(){
 
             if (BR[2] == 32) SDL_Delay(BR[4]);
 
-
+            /*
             next_game_tick += 1000 / 60;
             sleep = next_game_tick - SDL_GetTicks();
         
@@ -247,6 +269,7 @@ void execute_ins(){
                                 
                 SDL_Delay(sleep);
             }
+            */
             PC = PC+1;
         }
 
@@ -308,11 +331,19 @@ void execute_ins(){
         // add (add)
         if (functNum == 32) {
             printf("PC = %d, Instruction: add\n", PC);
+            printf("antes del add:\n") ;
+            printf("valor de rs: %d\n", BR[rsNum]);
+            printf("valor de rt: %d\n", BR[rtNum]);
+            printf("valor de rd: %d\n", BR[rdNum]);
             BR[rdNum] = BR[rsNum] + BR[rtNum];
             printf("Deespues del add:\n") ;
             printf("valor de rs: %d\n", BR[rsNum]);
             printf("valor de rt: %d\n", BR[rtNum]);
             printf("valor de rd: %d\n", BR[rdNum]);
+
+            if (rdNum == 23) {
+                //endGame = 1;
+            }
 
             PC = PC + 1;
         }
@@ -320,6 +351,7 @@ void execute_ins(){
         // xor (xor)
         if (functNum == 38) {
             printf("PC = %d, Instruction: xor\n", PC);
+            /*
             if (rs[0] == 0) rs[0] = 1; else rs[0] = 0;
             if (rs[1] == 0) rs[1] = 1; else rs[1] = 0;
             if (rs[2] == 0) rs[2] = 1; else rs[2] = 0;
@@ -328,6 +360,10 @@ void execute_ins(){
             rs[5] = '\0';
 
             BR[rdNum] = strtol(rd, NULL, 2);
+            */
+           if(BR[rsNum] == 1) BR[rdNum] = -2;
+
+           else BR[rdNum] = 0;
 
             PC = PC + 1;
 
@@ -419,6 +455,16 @@ void execute_ins(){
         if (opcodeNum == 9) {
             printf("PC = %d, Instruction: addiu\n", PC);
             BR[rtNum] = BR[rsNum] + inmNum;
+
+            printf("\n despues de la instruccion addiu \n");
+            printf("el valor de BR[rs]: %d\n", BR[rsNum]);
+            printf("el valor del inmediato: %d\n", inmNum);
+            printf("el valor guardado en BR[rt]: %d\n", BR[rtNum]);
+
+            if(PC == 228) { 
+                printf("revisar este caso\n");
+                //endGame = 1;
+            }
             PC = PC+1;
         }
         
@@ -454,6 +500,11 @@ void execute_ins(){
                 
                 // se debe buscar en el arreglo mem_data
                 BR[rtNum] = mem_data[inmNum/4];
+
+                printf("\nDetalles del load word de pos pelota\n");
+                printf("El numero de registro donde de guardó es: %d\n", rtNum);
+                printf("La direccion de memoria a buscar es la: %d\n", inmNum/4);
+                printf("el valor guadaro es: %d\n", BR[rtNum]);
             }
 
             // Caso en el que se debe esperar una entrada
@@ -516,6 +567,17 @@ void execute_ins(){
                 
                 // se debe buscar en el arreglo mem_data
                 mem_data[inmNum/4] = BR[rtNum];
+
+                printf("\ndespues del caso de sw que guarda t1\n");
+                printf("El valor de del registro (debe ser 9): %d\n", rtNum);
+                printf("valor que contiene el resgitros BR[rt]: %d\n", BR[rtNum]);
+                printf("El valor guardado en la memoria: %d, ent la posicion: %d\n", mem_data[inmNum/4], inmNum/4);
+                printf("El valor del  inmediato es: %d", inmNum);
+
+                if (PC == 232) {
+                    printf("revisar aqui");
+                    //endGame = 1;
+                }
             }
 
             // Este es el caso en el que se pinta uno de los cuadros de la pantalla
@@ -725,6 +787,10 @@ void execute_ins(){
 
     }
 
+    else {
+        printf("Instruction not afound at PC: %d", PC);
+        endGame = 1;
+    }
     //endGame = 0;
 }
 
@@ -768,6 +834,10 @@ int main(int argc, char *args[])
 		
     }
 
+    for (k = 0; k < AMOUNT_OF_DATA; k++)
+    {
+        printf("Data position: %d, value: %d\n", k, mem_data[k]);
+    }
     
     //free renderer and all textures used with it
 	SDL_DestroyRenderer(renderer);
