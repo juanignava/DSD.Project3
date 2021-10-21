@@ -210,8 +210,10 @@ void execute_ins(){
             shamt[c_sh] = instruction_mem[PC][initPosition+c_sh];
             c_sh++;
         }
-        rt[c_sh] = '\0';
+        shamt[c_sh] = '\0';
         int shamtNum = strtol(shamt, NULL, 2);
+
+        printf("instruccion tipo R con shamt: %s\n", shamt);
 
         // Get the funct value
         char funct[6];
@@ -227,13 +229,6 @@ void execute_ins(){
         funct[c_fn] = '\0';
         int functNum = strtol(funct, NULL, 2);
 
-        printf("Instruction R\n");
-        printf("RS: %s y RSNUM: %d\n", rs, rsNum);
-        printf("Rt: %s y RtNUM: %d\n", rt, rtNum);
-        printf("Rd: %s y RdNUM: %d\n", rd, rdNum);
-        printf("Shamt: %s y ShamtNUM: %d\n", shamt, shamtNum);
-        printf("function: %s y functionNUm: %d\n", funct, functNum);
-
         // Syscall (used to pause the execusion)
         if (functNum == 12)
         {
@@ -248,6 +243,10 @@ void execute_ins(){
         {
             printf("PC = %d, Instruction: addu\n", PC);
             BR[rdNum] = BR[rsNum] + BR[rtNum];
+            printf("Deespues del addu:\n") ;
+            printf("valor de rs: %d\n", BR[rsNum]);
+            printf("valor de rt: %d\n", BR[rtNum]);
+            printf("valor de rd: %d\n", BR[rdNum]);
             PC = PC+1;
         }
         
@@ -267,15 +266,24 @@ void execute_ins(){
         if (functNum == 34) {
             printf("PC = %d, Instruction: sub\n", PC);
             BR[rdNum] = BR[rsNum] - BR[rtNum];
-            PC = PC+1;    
+            PC = PC+1;   
+            printf("Deespues del sub:\n") ;
+            printf("valor de rs: %d\n", BR[rsNum]);
+            printf("valor de rt: %d\n", BR[rdNum]);
+            printf("valor de rd: %d\n", BR[rtNum]);
         }
         
         // sll (shift left logical)
         if (functNum == 0) {
-            
+            printf("\nAntes del sll: ");
+            printf("valor $rt: %d\n", BR[rtNum]);
+            printf("Valor de $rd: %d\n", BR[rdNum]);
+            printf("Valor de shamt: %d\n", shamtNum);
             printf("PC = %d, Instruction: sll\n", PC);
-            BR[rdNum] = BR[rsNum] * pow(2, shamtNum);
+            BR[rdNum] = BR[rtNum] * pow(2, shamtNum);
             PC = PC+1;
+            printf("Después del sll\n");
+            printf("Valor de $rd: %d\n", BR[rdNum]);
         }
         
         // jr (jump register)
@@ -289,6 +297,10 @@ void execute_ins(){
         if (functNum == 32) {
             printf("PC = %d, Instruction: add\n", PC);
             BR[rdNum] = BR[rsNum] + BR[rtNum];
+            printf("Deespues del add:\n") ;
+            printf("valor de rs: %d\n", BR[rsNum]);
+            printf("valor de rt: %d\n", BR[rtNum]);
+            printf("valor de rd: %d\n", BR[rdNum]);
 
             PC = PC + 1;
         }
@@ -502,19 +514,87 @@ void execute_ins(){
                 numero guardado en rs - $gp ( rs - BN[28] )
                 */
 
-                int boardPointNum = BR[rsNum] - BR[28];
-                int boardPointx = boardPointNum % 64;
-                int boardPointy = boardPointNum / 64;
                 int pointWidth = SCREEN_WIDTH / 64;
                 int pointHeight = SCREEN_HEIGHT / 32;
+                int boardPointNum = (BR[rsNum] - BR[28])/4;
+                int boardPointy = (boardPointNum / 64) * pointHeight;
+                int boardPointx = (boardPointNum - (boardPointy/10) * 64)*pointWidth;
+
+                printf("Information of the point in the screen: \n");
+                printf("Board point x: %d\n", boardPointx);
+                printf("Board point y: %d\n", boardPointy);
+                printf("Board point width: %d\n", pointWidth);
+                printf("Board point height: %d\n", pointHeight);
+                printf("Constants used for the claculations:\n");
+                printf("Saved value in $rs: %d\n", BR[rsNum]);
+                printf("SAved value in $gp: %d\n", BR[28]);
+                printf("Point number: %d\n", boardPointNum);
+                printf("Color: %d\n", BR[rtNum]);
+
+                /*
+                if (rsNum == 2){
+                    endGame = 1;
+                }
+                */
+
+                
 
                 SDL_Rect src;
                 src.x = boardPointx;
                 src.y = boardPointy;
                 src.w = pointWidth;
                 src.h = pointHeight;
+                
+                int r;
 
-                int r = SDL_FillRect(screen, &src, BR[rtNum]);
+                
+                switch (BR[rtNum])
+                {
+                    /*
+                    colores:
+                    blanco-> 0xffffffff
+                    rojo-> 0xff2222ff
+                    azul->  0xffe28743
+                    verde -> 0xff22ff11
+                    gris -> 0xff222222
+                    */
+                case 0:
+                    r = SDL_FillRect(screen , &src, 0xff222222); // fill with gray
+                    break;
+
+                case 16744448:
+                    r = SDL_FillRect(screen , &src, 0xff22ff11); // fill with green
+                    break;
+
+                case 12583040:
+                    r = SDL_FillRect(screen , &src, 0xff2222ff); // fill with red
+                    break;
+
+                case 16777215:
+                    r = SDL_FillRect(screen , &src, 0xffffffff); // fill with white
+                    break;
+                    
+                
+                case 1245175:
+                    r = SDL_FillRect(screen , &src, 0xffe28743); // fill with blue
+                    break;
+                
+                default:
+                    break;
+                }
+                
+                //int r = SDL_FillRect(screen , &src, 0xffffffff);
+
+                if (r !=0){
+	
+                    printf("fill rectangle faliled");
+                }
+
+                SDL_UpdateTexture(screen_texture, NULL, screen->pixels, screen->w * sizeof (Uint32));
+                SDL_RenderCopy(renderer, screen_texture, NULL, NULL);
+                //draw to the display
+                SDL_RenderPresent(renderer);
+                //SDL_Delay(1);
             }
 
             PC = PC+1;
@@ -534,7 +614,8 @@ void execute_ins(){
         if (opcodeNum == 8) {
             printf("PC = %d, Instruction: addi\n", PC);
 
-            BR[rtNum] = BR[rsNum] + inmNum;
+            if(rtNum == 29)  BR[rtNum] = BR[rsNum] + inmNum/4;
+            else BR[rtNum] = BR[rsNum] + inmNum;
 
             PC = PC + 1;
         }
@@ -631,7 +712,7 @@ void execute_ins(){
 
     }
 
-    endGame = 0;
+    //endGame = 0;
 }
 
 int main(int argc, char *args[])
@@ -649,16 +730,26 @@ int main(int argc, char *args[])
     int data = add_data(AMOUNT_OF_DATA);
     int text = add_instructions();
 
+    int k;
+    for (k = 0; k < AMOUNT_OF_DATA; k++)
+    {
+        printf("Data position: %d, value: %d\n", k, mem_data[k]);
+    }
+    
+
     if (!(data & text)) return 0;
     
+    //endGame=1;
     while (!endGame)
     {
         execute_ins();
+        /*
         SDL_UpdateTexture(screen_texture, NULL, screen->pixels, screen->w * sizeof (Uint32));
 		SDL_RenderCopy(renderer, screen_texture, NULL, NULL);
         //draw to the display
 		SDL_RenderPresent(renderer);
-        SDL_Delay(1);
+        //SDL_Delay(1);
+        */
     }
 
     
