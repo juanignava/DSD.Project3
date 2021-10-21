@@ -196,7 +196,7 @@ void execute_ins(){
             rd[c_rd] = instruction_mem[PC][initPosition+c_rd];
             c_rd++;
         }
-        rt[c_rd] = '\0';
+        rd[c_rd] = '\0';
         int rdNum = strtol(rd, NULL, 2);
 
         // Get the shamt value
@@ -221,11 +221,18 @@ void execute_ins(){
 
         while (c_fn < lenght_fn) 
         {
-            funct[c_rt] = instruction_mem[PC][initPosition+c_fn];
+            funct[c_fn] = instruction_mem[PC][initPosition+c_fn];
             c_fn++;
         }
         funct[c_fn] = '\0';
         int functNum = strtol(funct, NULL, 2);
+
+        printf("Instruction R\n");
+        printf("RS: %s y RSNUM: %d\n", rs, rsNum);
+        printf("Rt: %s y RtNUM: %d\n", rt, rtNum);
+        printf("Rd: %s y RdNUM: %d\n", rd, rdNum);
+        printf("Shamt: %s y ShamtNUM: %d\n", shamt, shamtNum);
+        printf("function: %s y functionNUm: %d\n", funct, functNum);
 
         // Syscall (used to pause the execusion)
         if (functNum == 12)
@@ -373,10 +380,11 @@ void execute_ins(){
 
             while (c_inm < lenght_inm)
             {
-                if (inmediate[c_inm] == 0) inmediate[c_inm] = 1;
-                else inmediate[c_inm] = 1;
+                if (inmediate[c_inm] == '0') inmediate[c_inm] = '1';
+                else inmediate[c_inm] = '0';
                 c_inm++;
             }
+            inmediate[c_inm] = '\0';
             
             inmNum = -1*(strtol(inmediate, NULL, 2) + 1);
         }
@@ -519,6 +527,7 @@ void execute_ins(){
             if (BR[rsNum] == BR[rtNum]) PC = PC + 1 + inmNum;
 
             else PC = PC + 1;
+
         }
 
         // addi (add immediate)
@@ -603,7 +612,7 @@ void execute_ins(){
 
         // Este calculo es para redimensionar la dirección para un PC
         // que va de 1 en 1 como el del emulador
-        addressNum = (addressNum-4194304)/4+1;
+        addressNum = (addressNum-4194304)/4;
 
         // Execute the corresponding operation
 
@@ -649,6 +658,7 @@ int main(int argc, char *args[])
 		SDL_RenderCopy(renderer, screen_texture, NULL, NULL);
         //draw to the display
 		SDL_RenderPresent(renderer);
+        SDL_Delay(1);
     }
 
     
