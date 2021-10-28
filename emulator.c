@@ -7,9 +7,22 @@
 
 #define SCREEN_WIDTH 640    // window height
 #define SCREEN_HEIGHT 320   // windoe width
-#define AMOUNT_OF_DATA 100 
-#define AMOUNT_OF_INSTRUTIONS 716
+#define AMOUNT_OF_DATA 100  // 100 for PONG
+#define AMOUNT_OF_INSTRUTIONS 2000 // 716 for PONG
 #define SPACES_IN_STACK 100
+
+/*
+// Archivos de PONG
+#define TEXT_FILE "text.txt"
+#define DATA_FILE "data.txt"
+*/
+
+
+// Archivos de WIZARDS OF WOR
+#define TEXT_FILE "text_p2.txt"
+#define DATA_FILE "data_p2.txt"
+
+
 
 //function prototypes
 //initilise SDL
@@ -73,7 +86,7 @@ int add_data(int amount_words) {
     ssize_t read;
 
     // open the text
-    fp = fopen("data.txt", "r");
+    fp = fopen(DATA_FILE, "r");
 
     if (fp == NULL) {
         printf("Error en la lectura del data.txt");
@@ -131,7 +144,7 @@ int add_instructions() {
     ssize_t read;
 
     // open the text
-    fp = fopen("text.txt", "r");
+    fp = fopen(TEXT_FILE, "r");
     if (fp == NULL) {
         printf("Error en la lectura del text.txt");
         return 0;
@@ -452,7 +465,7 @@ void execute_ins(){
             }
 
             // Caso en el que se debe esperar una entrada
-            if (BR[rsNum] == -65536 & inmNum == 4)
+            if (BR[rsNum] == -65536)// & inmNum == 4) *******************
             {
                 // se debe esperar a una entrada del teclado
 		        SDL_PumpEvents();
@@ -486,6 +499,40 @@ void execute_ins(){
                 if (keystate[SDL_SCANCODE_ESCAPE]) {
                     endGame =1; // significa que se presiono ESC entonces se debe salir del programa
                 }
+
+                if (keystate[SDL_SCANCODE_SPACE]) {
+                    BR[rtNum] = 32; // significa que se presiono el space
+                }
+
+                if (keystate[SDL_SCANCODE_S]) {
+                    BR[rtNum] = 115; // significa que se presiono una S
+                }
+
+                if (keystate[SDL_SCANCODE_W]) {
+                    BR[rtNum] = 119; // significa que se presiono una W
+                }
+
+                if (keystate[SDL_SCANCODE_D]) {
+                    BR[rtNum] = 100; // significa que se presiono una D
+                }
+
+                if (keystate[SDL_SCANCODE_I]) {
+                    BR[rtNum] = 105; // significa que se presiono una I
+                }
+
+                if (keystate[SDL_SCANCODE_J]) {
+                    BR[rtNum] = 106; // significa que se presiono una J
+                }
+
+                if (keystate[SDL_SCANCODE_L]) {
+                    BR[rtNum] = 108; // significa que se presiono una L
+                }
+
+
+
+
+
+
                 
             }
             
@@ -543,7 +590,11 @@ void execute_ins(){
                     rojo-> 0xff2222ff
                     azul->  0xffe28743
                     verde -> 0xff22ff11
+                    amarillo -> 0xff22ffff
+                    light green -> 0xff22aa00
+                    orange -> 0xff2222aa
                     gris -> 0xff222222
+                    purple -> 0x55aaaa00
                     */
                 case 0:
                     r = SDL_FillRect(screen , &src, 0xff222222); // fill with gray
@@ -565,7 +616,31 @@ void execute_ins(){
                 case 1245175:
                     r = SDL_FillRect(screen , &src, 0xffe28743); // fill with blue
                     break;
-                
+
+                case 16776960:
+                    r = SDL_FillRect(screen , &src, 0xff22ffff); // fill with yellow
+                    break;
+
+                case 65280:
+                    r = SDL_FillRect(screen , &src, 0xff22ff11); // fill with yellow
+                    break;
+
+                case 16711680:
+                    r = SDL_FillRect(screen , &src, 0xff2222ff); // fill with red
+                    break;
+
+                case 65471:
+                    r = SDL_FillRect(screen , &src, 0xff22aa00); // fill with light green
+                    break;
+
+                case 16753152:
+                    r = SDL_FillRect(screen , &src, 0xff2222aa); // fill with orange
+                    break;
+
+                case 9700348:
+                    r = SDL_FillRect(screen , &src, 0x55aaaa00); // fill with purple
+                    break;
+
                 default:
                     break;
                 }
@@ -715,6 +790,13 @@ int main(int argc, char *args[])
     
 
     int data = add_data(AMOUNT_OF_DATA);
+    
+    for (int i = 0; i < AMOUNT_OF_DATA; i++)
+    {
+        printf("%d\n", mem_data[i]);
+    }
+    
+    
     int text = add_instructions();
     
     if (!(data & text)) return 0;
