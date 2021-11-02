@@ -19,8 +19,8 @@
 
 
 // Archivos de WIZARDS OF WOR
-#define TEXT_FILE "text_p2.txt"
-#define DATA_FILE "data_p2.txt"
+#define TEXT_FILE "text.txt"
+#define DATA_FILE "data.txt"
 
 
 
